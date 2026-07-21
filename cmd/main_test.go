@@ -20,9 +20,9 @@ func TestBuildRepository(t *testing.T) {
 		}
 	})
 
-	t.Run("postgres driver is not implemented yet", func(t *testing.T) {
+	t.Run("postgres driver requires DATABASE_URL", func(t *testing.T) {
 		if _, err := buildRepository(config.Config{RepoDriver: "postgres"}); err == nil {
-			t.Fatal("expected an error for the postgres driver")
+			t.Fatal("expected an error when DATABASE_URL is empty")
 		}
 	})
 

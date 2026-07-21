@@ -14,10 +14,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/nicolas2601/go-graphql-products-api/internal/config"
 	"github.com/nicolas2601/go-graphql-products-api/internal/domain"
 	"github.com/nicolas2601/go-graphql-products-api/internal/repository/memory"
+	"github.com/nicolas2601/go-graphql-products-api/internal/repository/postgres"
 	"github.com/nicolas2601/go-graphql-products-api/internal/server"
 	"github.com/nicolas2601/go-graphql-products-api/internal/usecase"
 )
@@ -95,10 +97,27 @@ func buildRepository(cfg config.Config) (domain.ProductRepository, error) {
 	case "memory":
 		return memory.New(), nil
 	case "postgres":
-		return nil, fmt.Errorf("repo driver %q is not implemented yet", cfg.RepoDriver)
+		return buildPostgresRepository(cfg)
 	default:
 		return nil, fmt.Errorf("unknown repo driver %q", cfg.RepoDriver)
 	}
+}
+
+// buildPostgresRepository conecta a la base, aplica las migraciones y devuelve el repositorio.
+func buildPostgresRepository(cfg config.Config) (domain.ProductRepository, error) {
+	if cfg.DatabaseURL == "" {
+		return nil, errors.New("DATABASE_URL is required when REPO_DRIVER=postgres")
+	}
+	ctx := context.Background()
+	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("connect to postgres: %w", err)
+	}
+	if err := postgres.Migrate(ctx, pool); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("run migrations: %w", err)
+	}
+	return postgres.New(pool), nil
 }
 
 // configureLogger fija el logger estructurado por defecto segun el nivel indicado.
