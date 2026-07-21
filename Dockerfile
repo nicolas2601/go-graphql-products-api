@@ -1,16 +1,17 @@
 # syntax=docker/dockerfile:1
 
-# Etapa de build: compila un binario estatico.
-FROM golang:1.26-alpine AS build
+# Etapa de build: compila un binario estatico y stripeado.
+FROM golang:1.26.3-alpine AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -o /out/products-api ./cmd
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/products-api ./cmd
 
 # Etapa de runtime: imagen minima, usuario no-root, con healthcheck sobre /healthz.
-FROM alpine:3.20 AS production
-RUN apk add --no-cache ca-certificates wget \
+# El wget del healthcheck lo provee busybox (ya incluido en la base alpine).
+FROM alpine:3.20 AS runtime
+RUN apk add --no-cache ca-certificates \
     && adduser -D -u 1001 appuser
 COPY --from=build /out/products-api /usr/local/bin/products-api
 USER appuser

@@ -2,14 +2,14 @@ services:
   api:
     build:
       context: .
-      target: production
+      target: runtime
     ports:
       - "${API_PORT:-8080}:8080"
     environment:
       APP_ENV: development
       PORT: "8080"
       REPO_DRIVER: postgres
-      DATABASE_URL: postgres://products:products@db:5432/products?sslmode=disable
+      DATABASE_URL: postgres://products:${POSTGRES_PASSWORD:-products}@db:5432/products?sslmode=disable
       LOG_LEVEL: info
     depends_on:
       db:
@@ -18,9 +18,10 @@ services:
 
   db:
     image: postgres:16-alpine
+    # Credenciales de DESARROLLO local; en cualquier otro entorno sobreescribir POSTGRES_PASSWORD via env.
     environment:
       POSTGRES_USER: products
-      POSTGRES_PASSWORD: products
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-products}
       POSTGRES_DB: products
     # Sin puerto al host: la api accede por la red interna de compose (host "db").
     volumes:
@@ -30,6 +31,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
 
 volumes:
   pgdata:

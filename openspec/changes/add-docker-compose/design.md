@@ -25,3 +25,13 @@ Con Postgres: `docker compose up`. Sin Postgres (en memoria): correr el binario 
 
 Verificacion manual: `docker build` de la imagen; `docker compose up`; la API responde `/healthz`
 y una operacion GraphQL persiste en el Postgres del compose; `docker compose down` limpia.
+
+## Limitaciones conocidas (deuda documentada)
+
+- La migracion embebida (`CREATE TABLE IF NOT EXISTS`) no es 100% segura con varias replicas del
+  api arrancando en paralelo (race en el catalogo de Postgres). Con 1 replica no aplica; la
+  solucion futura seria un advisory lock o un migrator dedicado.
+- `/healthz` es un liveness check estatico; no verifica la conectividad a la base. Un `/readyz`
+  con `pool.Ping` seria la evolucion natural.
+- Endurecimiento runtime adicional (`read_only`, `cap_drop`, `no-new-privileges`, limites de
+  recursos) y escaneo de vulnerabilidades en CI quedan fuera del alcance de esta feature.
