@@ -74,3 +74,13 @@ No incluye:
 - Commits atomicos en `feature/usecase-product`, integrados a `develop` por pull request
   (la rama se conserva).
 - Registro de cierre (archive) en el reporte del merge.
+
+## Cierre (archive)
+
+- Verificacion: `go test ./... -race` en verde; cobertura del paquete usecase 100%.
+- Revision: go-reviewer sin criticos; se aplicaron tres mejoras antes del merge: wrapping de
+  errores del repositorio con `%w`, guard clause fail-fast para dependencias nil, y tests de
+  bordes (actualizar a nombre vacio, panic por dependencia nil).
+- Leccion: en Go, inyectar dependencias de un solo metodo como func types es mas idiomatico
+  que definir interfaces; el unico riesgo real es el nil no validado, cubierto con la guard
+  clause en el constructor.
