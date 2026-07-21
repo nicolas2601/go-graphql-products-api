@@ -8,6 +8,11 @@ import (
 )
 
 // Product es la entidad central del sistema.
+//
+// Invariante de almacenamiento: todos los campos son tipos por valor, por lo que copiar un
+// Product es una copia profunda. Si a futuro se agrega un campo de referencia (slice, map o
+// puntero), los repositorios que copian por valor dejaran de aislar el estado y necesitaran
+// una copia profunda explicita.
 type Product struct {
 	ID        string
 	Name      string
