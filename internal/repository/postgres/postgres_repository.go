@@ -17,8 +17,19 @@ import (
 //go:embed schema.sql
 var schemaSQL string
 
-// codigo SQLSTATE de violacion de unique/primary key en PostgreSQL.
-const uniqueViolationCode = "23505"
+// codigos SQLSTATE de PostgreSQL relevantes.
+const (
+	uniqueViolationCode       = "23505" // violacion de unique/primary key
+	invalidTextRepresentation = "22P02" // ej. un id que no es un UUID valido
+)
+
+// isMalformedID indica si el error es por un id con formato invalido para la columna UUID.
+// Se trata como "no encontrado" para que el repositorio se comporte igual que el de memoria
+// (cualquier id inexistente o malformado -> ErrProductNotFound), preservando el contrato.
+func isMalformedID(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == invalidTextRepresentation
+}
 
 // Repository persiste productos en PostgreSQL.
 type Repository struct {
@@ -63,7 +74,7 @@ func (r *Repository) GetByID(ctx context.Context, id string) (domain.Product, er
 		`SELECT id, name, price, stock, created_at FROM products WHERE id = $1`, id)
 
 	product, err := scanProduct(row)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) || isMalformedID(err) {
 		return domain.Product{}, domain.ErrProductNotFound
 	}
 	if err != nil {
@@ -100,6 +111,9 @@ func (r *Repository) Update(ctx context.Context, product domain.Product) error {
 	tag, err := r.pool.Exec(ctx,
 		`UPDATE products SET name = $2, price = $3, stock = $4 WHERE id = $1`,
 		product.ID, product.Name, product.Price, product.Stock)
+	if isMalformedID(err) {
+		return domain.ErrProductNotFound
+	}
 	if err != nil {
 		return fmt.Errorf("update product: %w", err)
 	}
@@ -112,6 +126,9 @@ func (r *Repository) Update(ctx context.Context, product domain.Product) error {
 // Delete elimina un producto por id, o ErrProductNotFound si no existe.
 func (r *Repository) Delete(ctx context.Context, id string) error {
 	tag, err := r.pool.Exec(ctx, `DELETE FROM products WHERE id = $1`, id)
+	if isMalformedID(err) {
+		return domain.ErrProductNotFound
+	}
 	if err != nil {
 		return fmt.Errorf("delete product: %w", err)
 	}

@@ -10,10 +10,14 @@ type ProductRepository interface {
 	// un producto con el mismo id.
 	Create(ctx context.Context, product Product) error
 	// GetByID devuelve el producto con el id dado, o ErrProductNotFound si no existe.
+	// Un id con formato invalido para el almacen subyacente se trata como inexistente.
 	GetByID(ctx context.Context, id string) (Product, error)
 	// List devuelve todos los productos.
 	List(ctx context.Context) ([]Product, error)
 	// Update reemplaza un producto existente, o devuelve ErrProductNotFound si no existe.
+	// CreatedAt es inmutable: las implementaciones deben preservar el valor original y no
+	// aplicar el que venga en product. Ante un id con formato invalido para el almacen
+	// subyacente, se trata como inexistente (ErrProductNotFound), igual que un id no encontrado.
 	Update(ctx context.Context, product Product) error
 	// Delete elimina el producto con el id dado, o devuelve ErrProductNotFound si no existe.
 	Delete(ctx context.Context, id string) error
