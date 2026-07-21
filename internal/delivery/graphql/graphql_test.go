@@ -2,6 +2,7 @@ package graphql_test
 
 import (
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -93,6 +94,25 @@ func TestGraphQLOperations(t *testing.T) {
 		var resp2 struct{ Product *struct{ ID string } }
 		if err := c.Post(`{ product(id:"missing") { id } }`, &resp2); err == nil {
 			t.Fatal("expected error for missing product")
+		}
+	})
+
+	t.Run("not-found surfaces PRODUCT_NOT_FOUND code end-to-end", func(t *testing.T) {
+		c := newTestClient()
+		queries := []string{
+			`{ product(id:"missing") { id } }`,
+			`mutation { updateProduct(id:"missing", input:{name:"X"}) { id } }`,
+			`mutation { deleteProduct(id:"missing") }`,
+		}
+		for _, q := range queries {
+			err := c.Post(q, &struct{}{})
+			if err == nil {
+				t.Fatalf("query %q: expected a GraphQL error", q)
+			}
+			// El error del cliente contiene el JSON de la respuesta, incluidas las extensions.
+			if !strings.Contains(err.Error(), "PRODUCT_NOT_FOUND") {
+				t.Fatalf("query %q: expected code PRODUCT_NOT_FOUND in response, got %v", q, err)
+			}
 		}
 	})
 }

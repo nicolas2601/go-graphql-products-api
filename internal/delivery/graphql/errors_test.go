@@ -28,7 +28,11 @@ func TestToGraphQLError(t *testing.T) {
 			if got := gqlErr.Extensions["code"]; got != c.want {
 				t.Fatalf("got code %v, want %s", got, c.want)
 			}
-			if gqlErr.Message == "" {
+			if c.want == "INTERNAL_ERROR" {
+				if gqlErr.Message != "internal server error" {
+					t.Fatalf("internal errors must not leak details, got %q", gqlErr.Message)
+				}
+			} else if gqlErr.Message == "" {
 				t.Fatal("expected a non-empty message")
 			}
 		})
