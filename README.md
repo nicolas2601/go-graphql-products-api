@@ -13,6 +13,12 @@ PostgreSQL. Es mi solucion a la Prueba 1 de la evaluacion tecnica.
 - Tests de integracion con [testcontainers-go](https://testcontainers.com/)
 - CI con GitHub Actions
 
+## Prerequisitos
+
+- Go >= 1.26
+- Docker (para `docker compose` y para los tests de integracion de PostgreSQL con testcontainers)
+- `golangci-lint` v2 (solo para correr `make lint` localmente)
+
 ## Arquitectura (Clean Architecture)
 
 Las dependencias apuntan hacia adentro: el dominio no conoce ningun detalle de infraestructura,
@@ -40,8 +46,10 @@ internal/repository/{memory,postgres}   implementaciones intercambiables de la i
 
 ## Configuracion
 
-La aplicacion lee su configuracion del entorno. Copiar `.env.example` a `.env` para desarrollo
-local (el `.env` real no se versiona).
+La aplicacion lee su configuracion directamente del entorno; **no carga un archivo `.env`**. El
+`.env` sirve para la interpolacion de `docker compose` (`API_PORT`, `POSTGRES_PASSWORD`); para
+ejecucion local directa, las variables se pasan inline o se exportan en el shell. `.env.example`
+documenta los valores disponibles y el `.env` real no se versiona.
 
 | Variable | Default | Uso |
 |---|---|---|
@@ -63,7 +71,8 @@ Hay dos modos, ambos soportados.
 
 ```bash
 REPO_DRIVER=memory APP_ENV=development go run ./cmd
-# o simplemente: make run   (usa los defaults, arranca en memoria)
+# make run tambien arranca en memoria, pero en modo production (sin playground);
+# para habilitar el playground: APP_ENV=development make run
 ```
 
 ### Modo PostgreSQL (con docker-compose)
@@ -76,7 +85,8 @@ docker compose up --build
 
 `docker compose` espera a que PostgreSQL este healthy antes de arrancar la API, que corre en
 `REPO_DRIVER=postgres` y aplica su migracion al conectarse. El puerto de la API es configurable
-con `API_PORT` (default 8080).
+con `API_PORT` (default 8080). El compose usa `APP_ENV=development` para dejar el playground
+disponible en la demo; para un despliegue tipo produccion se cambia a `APP_ENV=production`.
 
 ### Endpoints
 
@@ -97,7 +107,7 @@ Una vez arriba (cualquiera de los dos modos):
 - `updateProduct(id: ID!, input: UpdateProductInput!)`: actualiza nombre o precio.
 - `deleteProduct(id: ID!)`: elimina un producto.
 
-Ejemplo (crear y listar):
+Ejemplo de mutation (crear):
 
 ```graphql
 mutation {
@@ -108,7 +118,11 @@ mutation {
     createdAt
   }
 }
+```
 
+Ejemplo de query (listar):
+
+```graphql
 query {
   products {
     id
@@ -131,11 +145,23 @@ La cobertura de las capas de logica (dominio, casos de uso, repositorio en memor
 tests de integracion del repositorio PostgreSQL levantan una base efimera con testcontainers, por
 lo que requieren Docker corriendo; si Docker no esta disponible, esos tests se saltan solos.
 
+## Desarrollo
+
+El servidor GraphQL usa codigo generado por gqlgen. Tras modificar `graph/schema.graphqls` hay que
+regenerarlo:
+
+```bash
+make generate   # regenera el codigo de gqlgen desde el esquema
+make lint       # golangci-lint
+make build      # compila el binario en bin/
+```
+
 ## Integracion continua
 
 El pipeline de GitHub Actions (`.github/workflows/ci.yml`) corre en cada push y pull request a
-`main` y `develop`: lint (`golangci-lint`), tests con race detector (incluye los de PostgreSQL via
-testcontainers), `govulncheck` (bloqueante) y build de la imagen Docker.
+`main` y `develop`: lint (`golangci-lint`), `go build`, verificacion de `go mod tidy`, tests con
+race detector (incluye los de PostgreSQL via testcontainers), `govulncheck` (bloqueante) y build de
+la imagen Docker.
 
 ## Estructura del proyecto
 
@@ -150,8 +176,9 @@ internal/
   delivery/graphql/             resolvers + mapeo de errores/modelos
   server/                       handler HTTP
 graph/schema.graphqls           esquema GraphQL
-openspec/                       especificaciones (framework OpenSpec)
+openspec/specs/                 especificaciones por capacidad (framework OpenSpec, formato BDD)
 Dockerfile, docker-compose.yml  empaquetado y orquestacion
+.github/workflows/ci.yml        pipeline de CI
 ```
 
 ## Decisiones de diseno y deuda conocida
