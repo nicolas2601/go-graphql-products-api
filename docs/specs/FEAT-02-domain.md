@@ -20,6 +20,7 @@ No incluye:
 
 - El nombre no puede estar vacio ni contener solo espacios.
 - El precio debe ser mayor a cero.
+- El stock no puede ser negativo.
 
 ## Criterios de aceptacion (Given-When-Then)
 
@@ -28,6 +29,7 @@ No incluye:
   `ErrInvalidName`.
 - Dado un precio menor o igual a cero, cuando se construye un producto, entonces devuelve
   `ErrInvalidPrice`.
+- Dado un stock negativo, cuando se construye un producto, entonces devuelve `ErrInvalidStock`.
 
 ## Diseno
 
