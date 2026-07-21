@@ -185,6 +185,21 @@ func TestUpdate(t *testing.T) {
 			t.Fatalf("got %v, want ErrProductNotFound", err)
 		}
 	})
+
+	t.Run("updating name to empty returns ErrInvalidName and does not persist", func(t *testing.T) {
+		repo := newFakeRepo()
+		repo.items[fixedID] = base
+		uc := newUseCase(repo)
+
+		empty := ""
+		_, err := uc.Update(context.Background(), fixedID, &empty, nil)
+		if !errors.Is(err, domain.ErrInvalidName) {
+			t.Fatalf("got %v, want ErrInvalidName", err)
+		}
+		if repo.items[fixedID].Name != "Mouse" {
+			t.Fatalf("name should remain unchanged")
+		}
+	})
 }
 
 func TestDelete(t *testing.T) {
@@ -235,4 +250,13 @@ func TestRepositoryErrorPropagation(t *testing.T) {
 			t.Fatalf("got %v, want sentinel error", err)
 		}
 	})
+}
+
+func TestNewProductUseCasePanicsOnNilDependency(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatal("expected panic when a dependency is nil")
+		}
+	}()
+	usecase.NewProductUseCase(nil, nil, nil)
 }

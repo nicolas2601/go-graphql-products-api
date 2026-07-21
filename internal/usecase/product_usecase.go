@@ -4,6 +4,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/nicolas2601/go-graphql-products-api/internal/domain"
@@ -19,6 +20,12 @@ type ProductUseCase struct {
 // NewProductUseCase construye el caso de uso con sus dependencias inyectadas.
 // newID y now se inyectan para hacer las operaciones deterministas en los tests.
 func NewProductUseCase(repo domain.ProductRepository, newID func() string, now func() time.Time) *ProductUseCase {
+	if repo == nil || newID == nil || now == nil {
+		// Fail-fast: dependencias faltantes son un error de programacion en el wiring,
+		// no una condicion de ejecucion. Mejor romper en el arranque que con un nil
+		// pointer lejano en la primera operacion.
+		panic("usecase: repo, newID and now must not be nil")
+	}
 	return &ProductUseCase{repo: repo, newID: newID, now: now}
 }
 
@@ -29,7 +36,7 @@ func (uc *ProductUseCase) Create(ctx context.Context, name string, price float64
 		return domain.Product{}, err
 	}
 	if err := uc.repo.Create(ctx, product); err != nil {
-		return domain.Product{}, err
+		return domain.Product{}, fmt.Errorf("create product: %w", err)
 	}
 	return product, nil
 }
@@ -45,7 +52,8 @@ func (uc *ProductUseCase) List(ctx context.Context) ([]domain.Product, error) {
 }
 
 // Update aplica los campos enviados (nombre y/o precio), valida el resultado y persiste.
-// Los punteros nil representan campos no enviados, que se dejan sin cambios.
+// Los punteros nil representan campos no enviados, que se dejan sin cambios. Segun el
+// enunciado, solo se actualizan nombre y precio; el stock no es modificable por esta via.
 func (uc *ProductUseCase) Update(ctx context.Context, id string, name *string, price *float64) (domain.Product, error) {
 	product, err := uc.repo.GetByID(ctx, id)
 	if err != nil {
@@ -61,7 +69,7 @@ func (uc *ProductUseCase) Update(ctx context.Context, id string, name *string, p
 		return domain.Product{}, err
 	}
 	if err := uc.repo.Update(ctx, product); err != nil {
-		return domain.Product{}, err
+		return domain.Product{}, fmt.Errorf("update product: %w", err)
 	}
 	return product, nil
 }
