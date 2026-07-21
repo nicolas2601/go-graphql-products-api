@@ -16,9 +16,8 @@ func TestNewProduct(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		want := domain.Product{ID: "id-1", Name: "Keyboard", Price: 49.90, Stock: 10, CreatedAt: createdAt}
-		if p != want {
-			t.Fatalf("got %+v, want %+v", p, want)
+		if p.ID != "id-1" || p.Name != "Keyboard" || p.Price != 49.90 || p.Stock != 10 || !p.CreatedAt.Equal(createdAt) {
+			t.Fatalf("unexpected product: %+v", p)
 		}
 	})
 
