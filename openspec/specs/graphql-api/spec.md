@@ -1,7 +1,7 @@
 # graphql-api Specification
 
 ## Purpose
-TBD - created by archiving change add-graphql-resolvers. Update Purpose after archive.
+Define el comportamiento observable de las operaciones GraphQL de productos y el mapeo de errores de dominio a codigos.
 ## Requirements
 ### Requirement: List products
 The system SHALL return all products through the `products` query.

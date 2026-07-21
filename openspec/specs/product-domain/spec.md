@@ -1,7 +1,7 @@
 # product-domain Specification
 
 ## Purpose
-TBD - created by archiving change document-existing-capabilities. Update Purpose after archive.
+Define la entidad Producto, sus invariantes de negocio y los errores de dominio tipados.
 ## Requirements
 ### Requirement: Product invariants
 The system SHALL construct a product only when its business invariants hold: the name MUST NOT be empty, the price MUST be greater than zero and the stock MUST NOT be negative.

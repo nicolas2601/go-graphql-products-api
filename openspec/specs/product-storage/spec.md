@@ -1,7 +1,7 @@
 # product-storage Specification
 
 ## Purpose
-TBD - created by archiving change document-existing-capabilities. Update Purpose after archive.
+Define el contrato de persistencia de productos y su implementacion en memoria segura para uso concurrente.
 ## Requirements
 ### Requirement: Product repository contract
 The system SHALL persist products through a repository interface defined in the domain layer, returning `ErrProductNotFound` for unknown ids and `ErrProductAlreadyExists` when creating a duplicate id.

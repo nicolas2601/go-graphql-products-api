@@ -1,7 +1,7 @@
 # product-application Specification
 
 ## Purpose
-TBD - created by archiving change document-existing-capabilities. Update Purpose after archive.
+Define los casos de uso de producto (crear, consultar, listar, actualizar, eliminar) sobre el repositorio del dominio.
 ## Requirements
 ### Requirement: Create product use case
 The system SHALL create a product through the application layer, assigning an injected id and creation timestamp, and MUST validate the invariants before persisting.

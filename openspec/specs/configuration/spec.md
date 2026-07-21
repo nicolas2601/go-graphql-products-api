@@ -1,7 +1,7 @@
 # configuration Specification
 
 ## Purpose
-TBD - created by archiving change document-existing-capabilities. Update Purpose after archive.
+Define como la aplicacion carga su configuracion desde el entorno, con valores por defecto.
 ## Requirements
 ### Requirement: Environment configuration with defaults
 The system SHALL load its configuration from the environment, applying sensible defaults for every value when the variable is absent.
