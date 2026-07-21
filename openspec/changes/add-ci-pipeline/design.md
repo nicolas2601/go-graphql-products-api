@@ -21,11 +21,20 @@ golangci-lint v2.
 ### go mod tidy check
 Se verifica que `go.mod`/`go.sum` esten ordenados (`go mod tidy` + `git diff --exit-code`).
 
-### Escaneo de vulnerabilidades informativo
-`govulncheck` corre como paso informativo (`continue-on-error`) para no bloquear el pipeline por
-vulnerabilidades en dependencias transitivas; se puede endurecer a bloqueante mas adelante.
+### Escaneo de vulnerabilidades bloqueante
+`govulncheck` (pineado `@v1.6.0`) corre en su propio job y ES bloqueante. Las vulnerabilidades
+detectadas eran de la biblioteca estandar de Go 1.26.3 (GO-2026-5037/5039/5856), no de
+dependencias; se resolvieron bumpeando el toolchain a `go1.26.5` (`toolchain go1.26.5` en
+`go.mod`), con lo que el scan queda limpio y el gate tiene sentido.
+
+### Endurecimiento del pipeline
+- Actions pineadas por SHA (checkout/setup-go/upload-artifact v7, sobre Node 24) para
+  reproducibilidad y superficie de supply chain.
+- `concurrency` con `cancel-in-progress` para no acumular runs viejos.
+- `timeout-minutes` por job para no quemar runners ante un cuelgue.
+- Cobertura reportada (`go tool cover -func`) y subida como artifact.
 
 ## Testing
 
 El workflow debe correr VERDE en GitHub Actions (se confirma con `gh run`/`gh pr checks`), no solo
-existir.
+existir. Verificado: run 29852440901 con lint, test, vuln y docker en success.
