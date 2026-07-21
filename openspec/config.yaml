@@ -1,5 +1,12 @@
 schema: spec-driven
 
+context: |
+  API de gestion de productos en Go + GraphQL (gqlgen) con Clean Architecture.
+  Capas: dominio (invariantes de negocio), usecase (aplicacion), repository (memoria; postgres
+  pendiente) y delivery (GraphQL). Convenciones: TDD estricto (red-green-refactor), conventional
+  commits, archivos <= 300 lineas, funciones <= 40, errores de dominio tipados envueltos con %w.
+  Comandos: go test ./... -race, go build ./..., go vet ./..., make generate.
+
 # Project context (optional)
 # This is shown to AI when creating artifacts.
 # Add your tech stack, conventions, style guides, domain knowledge, etc.
