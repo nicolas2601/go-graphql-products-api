@@ -4,7 +4,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/nicolas2601/go-graphql-products-api/internal/domain"
@@ -36,7 +35,7 @@ func (uc *ProductUseCase) Create(ctx context.Context, name string, price float64
 		return domain.Product{}, err
 	}
 	if err := uc.repo.Create(ctx, product); err != nil {
-		return domain.Product{}, fmt.Errorf("create product: %w", err)
+		return domain.Product{}, err
 	}
 	return product, nil
 }
@@ -69,7 +68,7 @@ func (uc *ProductUseCase) Update(ctx context.Context, id string, name *string, p
 		return domain.Product{}, err
 	}
 	if err := uc.repo.Update(ctx, product); err != nil {
-		return domain.Product{}, fmt.Errorf("update product: %w", err)
+		return domain.Product{}, err
 	}
 	return product, nil
 }
