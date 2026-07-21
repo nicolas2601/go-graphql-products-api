@@ -21,6 +21,9 @@ func New() *Repository {
 	return &Repository{items: make(map[string]domain.Product)}
 }
 
+// Verificacion en compilacion de que *Repository satisface el contrato del dominio.
+var _ domain.ProductRepository = (*Repository)(nil)
+
 // Create inserta un producto nuevo. Devuelve ErrProductAlreadyExists si el id ya existe.
 func (r *Repository) Create(_ context.Context, product domain.Product) error {
 	r.mu.Lock()
@@ -55,4 +58,26 @@ func (r *Repository) List(_ context.Context) ([]domain.Product, error) {
 		return products[i].ID < products[j].ID
 	})
 	return products, nil
+}
+
+// Update reemplaza un producto existente, o devuelve ErrProductNotFound si no existe.
+func (r *Repository) Update(_ context.Context, product domain.Product) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, ok := r.items[product.ID]; !ok {
+		return domain.ErrProductNotFound
+	}
+	r.items[product.ID] = product
+	return nil
+}
+
+// Delete elimina el producto con el id dado, o devuelve ErrProductNotFound si no existe.
+func (r *Repository) Delete(_ context.Context, id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, ok := r.items[id]; !ok {
+		return domain.ErrProductNotFound
+	}
+	delete(r.items, id)
+	return nil
 }

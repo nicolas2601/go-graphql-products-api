@@ -88,3 +88,52 @@ func TestList(t *testing.T) {
 		}
 	})
 }
+
+func TestUpdate(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("updates an existing product", func(t *testing.T) {
+		repo := memory.New()
+		_ = repo.Create(ctx, sampleProduct("a"))
+
+		updated := sampleProduct("a")
+		updated.Name = "Renamed"
+		if err := repo.Update(ctx, updated); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		got, _ := repo.GetByID(ctx, "a")
+		if got.Name != "Renamed" {
+			t.Fatalf("update not persisted: %+v", got)
+		}
+	})
+
+	t.Run("missing product returns ErrProductNotFound", func(t *testing.T) {
+		repo := memory.New()
+		if err := repo.Update(ctx, sampleProduct("missing")); !errors.Is(err, domain.ErrProductNotFound) {
+			t.Fatalf("got %v, want ErrProductNotFound", err)
+		}
+	})
+}
+
+func TestDelete(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("deletes an existing product", func(t *testing.T) {
+		repo := memory.New()
+		_ = repo.Create(ctx, sampleProduct("a"))
+
+		if err := repo.Delete(ctx, "a"); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if _, err := repo.GetByID(ctx, "a"); !errors.Is(err, domain.ErrProductNotFound) {
+			t.Fatalf("product still present after delete")
+		}
+	})
+
+	t.Run("missing product returns ErrProductNotFound", func(t *testing.T) {
+		repo := memory.New()
+		if err := repo.Delete(ctx, "missing"); !errors.Is(err, domain.ErrProductNotFound) {
+			t.Fatalf("got %v, want ErrProductNotFound", err)
+		}
+	})
+}
