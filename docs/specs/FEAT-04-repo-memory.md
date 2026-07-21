@@ -72,3 +72,15 @@ No incluye:
 - Commits atomicos en `feature/repo-memory`, integrados a `develop` por pull request
   (la rama se conserva).
 - Registro de cierre (archive) al mergear.
+
+## Cierre (archive)
+
+- Verificacion: `go test ./... -race` en verde; cobertura de domain, usecase y memory al 100%.
+- Revision: go-reviewer sin criticos; se aplicaron cuatro mejoras antes del merge: contrato de
+  duplicado documentado en la interfaz del dominio, invariante de copia por valor en `Product`,
+  test de `Create` concurrente con el mismo id (atomicidad del check-then-insert) y test de
+  propagacion del error de duplicado hacia el caso de uso.
+- Leccion: un repositorio keyed-store debe garantizar unicidad por invariante propia, sin asumir
+  que el generador de ids upstream nunca colisiona; el contrato de errores debe vivir en la
+  interfaz del dominio, no solo en la implementacion, para preservar la sustituibilidad.
+
