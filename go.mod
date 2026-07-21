@@ -2,6 +2,8 @@ module github.com/nicolas2601/go-graphql-products-api
 
 go 1.26.3
 
+toolchain go1.26.5
+
 require (
 	github.com/99designs/gqlgen v0.17.94
 	github.com/google/uuid v1.6.0
