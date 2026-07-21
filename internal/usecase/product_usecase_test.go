@@ -12,12 +12,17 @@ import (
 
 // fakeRepo es un doble de prueba en memoria que implementa domain.ProductRepository.
 type fakeRepo struct {
-	items map[string]domain.Product
+	items      map[string]domain.Product
+	failCreate error
+	failUpdate error
 }
 
 func newFakeRepo() *fakeRepo { return &fakeRepo{items: make(map[string]domain.Product)} }
 
 func (f *fakeRepo) Create(_ context.Context, p domain.Product) error {
+	if f.failCreate != nil {
+		return f.failCreate
+	}
 	f.items[p.ID] = p
 	return nil
 }
@@ -41,6 +46,9 @@ func (f *fakeRepo) List(_ context.Context) ([]domain.Product, error) {
 func (f *fakeRepo) Update(_ context.Context, p domain.Product) error {
 	if _, ok := f.items[p.ID]; !ok {
 		return domain.ErrProductNotFound
+	}
+	if f.failUpdate != nil {
+		return f.failUpdate
 	}
 	f.items[p.ID] = p
 	return nil
@@ -199,6 +207,32 @@ func TestDelete(t *testing.T) {
 
 		if err := uc.Delete(context.Background(), "missing"); !errors.Is(err, domain.ErrProductNotFound) {
 			t.Fatalf("got %v, want ErrProductNotFound", err)
+		}
+	})
+}
+
+func TestRepositoryErrorPropagation(t *testing.T) {
+	sentinel := errors.New("repository failure")
+
+	t.Run("create propagates repository error", func(t *testing.T) {
+		repo := newFakeRepo()
+		repo.failCreate = sentinel
+		uc := newUseCase(repo)
+
+		if _, err := uc.Create(context.Background(), "Mouse", 10, 1); !errors.Is(err, sentinel) {
+			t.Fatalf("got %v, want sentinel error", err)
+		}
+	})
+
+	t.Run("update propagates repository error", func(t *testing.T) {
+		repo := newFakeRepo()
+		repo.items[fixedID] = domain.Product{ID: fixedID, Name: "Mouse", Price: 10, CreatedAt: fixedTime}
+		repo.failUpdate = sentinel
+		uc := newUseCase(repo)
+
+		name := "New"
+		if _, err := uc.Update(context.Background(), fixedID, &name, nil); !errors.Is(err, sentinel) {
+			t.Fatalf("got %v, want sentinel error", err)
 		}
 	})
 }
