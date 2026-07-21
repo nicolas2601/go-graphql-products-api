@@ -3,6 +3,8 @@ package memory_test
 import (
 	"context"
 	"errors"
+	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -136,4 +138,31 @@ func TestDelete(t *testing.T) {
 			t.Fatalf("got %v, want ErrProductNotFound", err)
 		}
 	})
+}
+
+func TestConcurrentAccess(t *testing.T) {
+	repo := memory.New()
+	ctx := context.Background()
+	const workers = 50
+
+	var wg sync.WaitGroup
+	wg.Add(workers)
+	for i := 0; i < workers; i++ {
+		go func(n int) {
+			defer wg.Done()
+			id := strconv.Itoa(n)
+			_ = repo.Create(ctx, sampleProduct(id))
+			_, _ = repo.GetByID(ctx, id)
+			_, _ = repo.List(ctx)
+		}(i)
+	}
+	wg.Wait()
+
+	got, err := repo.List(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(got) != workers {
+		t.Fatalf("got %d products, want %d", len(got), workers)
+	}
 }
