@@ -43,3 +43,31 @@ func (uc *ProductUseCase) Get(ctx context.Context, id string) (domain.Product, e
 func (uc *ProductUseCase) List(ctx context.Context) ([]domain.Product, error) {
 	return uc.repo.List(ctx)
 }
+
+// Update aplica los campos enviados (nombre y/o precio), valida el resultado y persiste.
+// Los punteros nil representan campos no enviados, que se dejan sin cambios.
+func (uc *ProductUseCase) Update(ctx context.Context, id string, name *string, price *float64) (domain.Product, error) {
+	product, err := uc.repo.GetByID(ctx, id)
+	if err != nil {
+		return domain.Product{}, err
+	}
+	if name != nil {
+		product.Name = *name
+	}
+	if price != nil {
+		product.Price = *price
+	}
+	if err := product.Validate(); err != nil {
+		return domain.Product{}, err
+	}
+	if err := uc.repo.Update(ctx, product); err != nil {
+		return domain.Product{}, err
+	}
+	return product, nil
+}
+
+// Delete elimina un producto por id, o devuelve ErrProductNotFound si no existe.
+func (uc *ProductUseCase) Delete(ctx context.Context, id string) error {
+	return uc.repo.Delete(ctx, id)
+}
+

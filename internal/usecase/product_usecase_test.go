@@ -130,3 +130,75 @@ func TestList(t *testing.T) {
 		t.Fatalf("got %d products, want 2", len(got))
 	}
 }
+
+func TestUpdate(t *testing.T) {
+	base := domain.Product{ID: fixedID, Name: "Mouse", Price: 10, Stock: 5, CreatedAt: fixedTime}
+
+	t.Run("updates only the provided fields and persists", func(t *testing.T) {
+		repo := newFakeRepo()
+		repo.items[fixedID] = base
+		uc := newUseCase(repo)
+
+		newName := "Gaming Mouse"
+		p, err := uc.Update(context.Background(), fixedID, &newName, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if p.Name != "Gaming Mouse" || repo.items[fixedID].Name != "Gaming Mouse" {
+			t.Fatalf("name not updated: %+v", repo.items[fixedID])
+		}
+		if p.Price != 10 {
+			t.Fatalf("price should be unchanged, got %v", p.Price)
+		}
+	})
+
+	t.Run("invalid update returns domain error and does not persist", func(t *testing.T) {
+		repo := newFakeRepo()
+		repo.items[fixedID] = base
+		uc := newUseCase(repo)
+
+		invalidPrice := 0.0
+		_, err := uc.Update(context.Background(), fixedID, nil, &invalidPrice)
+		if !errors.Is(err, domain.ErrInvalidPrice) {
+			t.Fatalf("got %v, want ErrInvalidPrice", err)
+		}
+		if repo.items[fixedID].Price != 10 {
+			t.Fatalf("price should remain unchanged")
+		}
+	})
+
+	t.Run("missing product returns ErrProductNotFound", func(t *testing.T) {
+		repo := newFakeRepo()
+		uc := newUseCase(repo)
+
+		name := "X"
+		_, err := uc.Update(context.Background(), "missing", &name, nil)
+		if !errors.Is(err, domain.ErrProductNotFound) {
+			t.Fatalf("got %v, want ErrProductNotFound", err)
+		}
+	})
+}
+
+func TestDelete(t *testing.T) {
+	t.Run("existing product is deleted", func(t *testing.T) {
+		repo := newFakeRepo()
+		repo.items[fixedID] = domain.Product{ID: fixedID}
+		uc := newUseCase(repo)
+
+		if err := uc.Delete(context.Background(), fixedID); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if _, ok := repo.items[fixedID]; ok {
+			t.Fatalf("product was not deleted")
+		}
+	})
+
+	t.Run("missing product returns ErrProductNotFound", func(t *testing.T) {
+		repo := newFakeRepo()
+		uc := newUseCase(repo)
+
+		if err := uc.Delete(context.Background(), "missing"); !errors.Is(err, domain.ErrProductNotFound) {
+			t.Fatalf("got %v, want ErrProductNotFound", err)
+		}
+	})
+}
