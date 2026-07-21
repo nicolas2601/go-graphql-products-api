@@ -166,3 +166,36 @@ func TestConcurrentAccess(t *testing.T) {
 		t.Fatalf("got %d products, want %d", len(got), workers)
 	}
 }
+
+func TestConcurrentCreateSameID(t *testing.T) {
+	repo := memory.New()
+	ctx := context.Background()
+	const workers = 50
+
+	var (
+		wg        sync.WaitGroup
+		mu        sync.Mutex
+		created   int
+		duplicate int
+	)
+	wg.Add(workers)
+	for i := 0; i < workers; i++ {
+		go func() {
+			defer wg.Done()
+			err := repo.Create(ctx, sampleProduct("same"))
+			mu.Lock()
+			switch {
+			case err == nil:
+				created++
+			case errors.Is(err, domain.ErrProductAlreadyExists):
+				duplicate++
+			}
+			mu.Unlock()
+		}()
+	}
+	wg.Wait()
+
+	if created != 1 || duplicate != workers-1 {
+		t.Fatalf("got created=%d duplicate=%d, want created=1 duplicate=%d", created, duplicate, workers-1)
+	}
+}
