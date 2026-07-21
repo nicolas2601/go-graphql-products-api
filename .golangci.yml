@@ -1,0 +1,16 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  exclusions:
+    generated: lax
+    paths:
+      - internal/delivery/graphql/generated
+      - internal/delivery/graphql/model
+
+formatters:
+  enable:
+    - gofmt
