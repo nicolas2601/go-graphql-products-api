@@ -160,6 +160,25 @@ func TestUpdate(t *testing.T) {
 		}
 	})
 
+	t.Run("updates name and price together in a single call", func(t *testing.T) {
+		repo := newFakeRepo()
+		repo.items[fixedID] = base
+		uc := newUseCase(repo)
+
+		newName := "Gaming Mouse"
+		newPrice := 79.90
+		p, err := uc.Update(context.Background(), fixedID, &newName, &newPrice)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if p.Name != "Gaming Mouse" || p.Price != 79.90 {
+			t.Fatalf("both fields should be updated, got %+v", p)
+		}
+		if stored := repo.items[fixedID]; stored.Name != "Gaming Mouse" || stored.Price != 79.90 {
+			t.Fatalf("both fields should be persisted, got %+v", stored)
+		}
+	})
+
 	t.Run("invalid update returns domain error and does not persist", func(t *testing.T) {
 		repo := newFakeRepo()
 		repo.items[fixedID] = base
