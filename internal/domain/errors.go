@@ -11,4 +11,6 @@ var (
 	ErrInvalidName = errors.New("product name must not be empty")
 	// ErrInvalidPrice indica que el precio del producto no es mayor a cero.
 	ErrInvalidPrice = errors.New("product price must be greater than zero")
+	// ErrInvalidStock indica que el stock del producto es negativo.
+	ErrInvalidStock = errors.New("product stock must not be negative")
 )

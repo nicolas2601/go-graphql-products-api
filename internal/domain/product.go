@@ -34,5 +34,8 @@ func (p Product) Validate() error {
 	if p.Price <= 0 {
 		return ErrInvalidPrice
 	}
+	if p.Stock < 0 {
+		return ErrInvalidStock
+	}
 	return nil
 }

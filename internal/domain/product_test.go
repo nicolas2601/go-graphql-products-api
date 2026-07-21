@@ -26,16 +26,18 @@ func TestNewProduct(t *testing.T) {
 			name        string
 			productName string
 			price       float64
+			stock       int
 			want        error
 		}{
-			{"empty name", "", 10, domain.ErrInvalidName},
-			{"whitespace name", "   ", 10, domain.ErrInvalidName},
-			{"zero price", "Mouse", 0, domain.ErrInvalidPrice},
-			{"negative price", "Mouse", -1, domain.ErrInvalidPrice},
+			{"empty name", "", 10, 1, domain.ErrInvalidName},
+			{"whitespace name", "   ", 10, 1, domain.ErrInvalidName},
+			{"zero price", "Mouse", 0, 1, domain.ErrInvalidPrice},
+			{"negative price", "Mouse", -1, 1, domain.ErrInvalidPrice},
+			{"negative stock", "Mouse", 10, -5, domain.ErrInvalidStock},
 		}
 		for _, c := range cases {
 			t.Run(c.name, func(t *testing.T) {
-				_, err := domain.NewProduct("id", c.productName, c.price, 1, createdAt)
+				_, err := domain.NewProduct("id", c.productName, c.price, c.stock, createdAt)
 				if !errors.Is(err, c.want) {
 					t.Fatalf("got error %v, want %v", err, c.want)
 				}
