@@ -22,3 +22,6 @@ coverage.*
 
 # Go
 vendor/
+
+# Tooling de agente/IDE (comandos de OpenSpec para Claude Code), no es parte del entregable
+.claude/

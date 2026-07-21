@@ -1,0 +1,4 @@
+# Marca el codigo generado por gqlgen para que GitHub lo colapse en los diffs
+# y no lo cuente en las estadisticas de lenguaje del repositorio.
+internal/delivery/graphql/generated/generated.go linguist-generated=true
+internal/delivery/graphql/model/models_gen.go   linguist-generated=true

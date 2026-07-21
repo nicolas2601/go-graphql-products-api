@@ -1,0 +1,15 @@
+.git
+.gitignore
+.gitattributes
+.env
+.env.*
+*.log
+/bin/
+/tmp/
+coverage.*
+Dockerfile
+docker-compose*.yml
+.dockerignore
+openspec/
+docs/
+README.md
