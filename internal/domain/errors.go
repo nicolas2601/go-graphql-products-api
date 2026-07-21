@@ -13,4 +13,6 @@ var (
 	ErrInvalidPrice = errors.New("product price must be greater than zero")
 	// ErrInvalidStock indica que el stock del producto es negativo.
 	ErrInvalidStock = errors.New("product stock must not be negative")
+	// ErrProductAlreadyExists indica que ya existe un producto con el identificador dado.
+	ErrProductAlreadyExists = errors.New("product already exists")
 )

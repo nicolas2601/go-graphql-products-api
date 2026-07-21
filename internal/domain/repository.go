@@ -6,7 +6,8 @@ import "context"
 // de dominio: los casos de uso dependen de esta interfaz, no de una implementacion
 // concreta. Las implementaciones (memoria, PostgreSQL) viven en la capa de repositorio.
 type ProductRepository interface {
-	// Create persiste un producto nuevo.
+	// Create persiste un producto nuevo. Debe devolver ErrProductAlreadyExists si ya existe
+	// un producto con el mismo id.
 	Create(ctx context.Context, product Product) error
 	// GetByID devuelve el producto con el id dado, o ErrProductNotFound si no existe.
 	GetByID(ctx context.Context, id string) (Product, error)

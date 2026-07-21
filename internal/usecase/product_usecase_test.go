@@ -250,6 +250,16 @@ func TestRepositoryErrorPropagation(t *testing.T) {
 			t.Fatalf("got %v, want sentinel error", err)
 		}
 	})
+
+	t.Run("create propagates duplicate error", func(t *testing.T) {
+		repo := newFakeRepo()
+		repo.failCreate = domain.ErrProductAlreadyExists
+		uc := newUseCase(repo)
+
+		if _, err := uc.Create(context.Background(), "Mouse", 10, 1); !errors.Is(err, domain.ErrProductAlreadyExists) {
+			t.Fatalf("got %v, want ErrProductAlreadyExists", err)
+		}
+	})
 }
 
 func TestNewProductUseCasePanicsOnNilDependency(t *testing.T) {
