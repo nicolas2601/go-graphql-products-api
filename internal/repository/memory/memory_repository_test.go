@@ -115,6 +115,24 @@ func TestUpdate(t *testing.T) {
 			t.Fatalf("got %v, want ErrProductNotFound", err)
 		}
 	})
+
+	// CreatedAt es inmutable: aunque el producto entrante traiga otro CreatedAt, Update debe
+	// preservar el original, igual que el repo PostgreSQL (que no toca la columna created_at).
+	t.Run("preserves original CreatedAt", func(t *testing.T) {
+		repo := memory.New()
+		original := sampleProduct("a")
+		_ = repo.Create(ctx, original)
+
+		tampered := sampleProduct("a")
+		tampered.CreatedAt = original.CreatedAt.Add(48 * time.Hour)
+		if err := repo.Update(ctx, tampered); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		got, _ := repo.GetByID(ctx, "a")
+		if !got.CreatedAt.Equal(original.CreatedAt) {
+			t.Fatalf("CreatedAt changed: got %v, want %v", got.CreatedAt, original.CreatedAt)
+		}
+	})
 }
 
 func TestDelete(t *testing.T) {

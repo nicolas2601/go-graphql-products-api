@@ -148,4 +148,20 @@ func TestPostgresRepository(t *testing.T) {
 			t.Fatalf("got %v, want ErrProductNotFound", err)
 		}
 	})
+
+	// La columna id es UUID: un id con formato invalido dispara un error de cast (SQLSTATE 22P02)
+	// en Postgres. Debe traducirse a ErrProductNotFound para comportarse igual que el repo en
+	// memoria (que acepta cualquier string), y no filtrarse como un error interno.
+	t.Run("malformed id is treated as not found", func(t *testing.T) {
+		reset()
+		if _, err := repo.GetByID(ctx, "not-a-uuid"); !errors.Is(err, domain.ErrProductNotFound) {
+			t.Fatalf("GetByID: got %v, want ErrProductNotFound", err)
+		}
+		if err := repo.Update(ctx, sampleProduct("not-a-uuid")); !errors.Is(err, domain.ErrProductNotFound) {
+			t.Fatalf("Update: got %v, want ErrProductNotFound", err)
+		}
+		if err := repo.Delete(ctx, "not-a-uuid"); !errors.Is(err, domain.ErrProductNotFound) {
+			t.Fatalf("Delete: got %v, want ErrProductNotFound", err)
+		}
+	})
 }

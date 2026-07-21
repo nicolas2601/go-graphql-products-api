@@ -195,3 +195,8 @@ Dockerfile, docker-compose.yml  empaquetado y orquestacion
   `/readyz` con `pool.Ping` seria el siguiente paso.
 - **Aislamiento del dominio**: las validaciones viven en el dominio y se fuerzan tambien en el
   caso de uso antes de persistir; los resolvers no contienen logica de negocio.
+- **Paridad de contrato entre implementaciones**: ambos repositorios (memoria y PostgreSQL)
+  respetan el mismo contrato de forma verificada por tests: `CreatedAt` es inmutable en `Update`
+  y un id con formato invalido (no-UUID contra la columna `UUID` de Postgres) se traduce a
+  `ErrProductNotFound`, no a un error interno, igual que en memoria. Ademas del linter estandar
+  se corre `gosec` para analisis estatico de seguridad.

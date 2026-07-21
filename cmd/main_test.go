@@ -35,7 +35,11 @@ func TestBuildRepository(t *testing.T) {
 }
 
 func TestServeGracefulShutdown(t *testing.T) {
-	srv := &http.Server{Addr: "127.0.0.1:0", Handler: http.NewServeMux()}
+	srv := &http.Server{
+		Addr:              "127.0.0.1:0",
+		Handler:           http.NewServeMux(),
+		ReadHeaderTimeout: 5 * time.Second,
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	result := make(chan error, 1)

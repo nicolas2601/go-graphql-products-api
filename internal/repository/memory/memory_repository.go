@@ -60,13 +60,17 @@ func (r *Repository) List(_ context.Context) ([]domain.Product, error) {
 	return products, nil
 }
 
-// Update reemplaza un producto existente, o devuelve ErrProductNotFound si no existe.
+// Update reemplaza nombre, precio y stock de un producto existente, o devuelve
+// ErrProductNotFound si no existe. CreatedAt es inmutable: se preserva el valor original,
+// igual que en el repositorio PostgreSQL, para que ambas implementaciones se comporten identico.
 func (r *Repository) Update(_ context.Context, product domain.Product) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if _, ok := r.items[product.ID]; !ok {
+	existing, ok := r.items[product.ID]
+	if !ok {
 		return domain.ErrProductNotFound
 	}
+	product.CreatedAt = existing.CreatedAt
 	r.items[product.ID] = product
 	return nil
 }
