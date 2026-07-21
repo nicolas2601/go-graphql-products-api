@@ -13,7 +13,7 @@ func TestLoad(t *testing.T) {
 			env:  map[string]string{},
 			want: Config{
 				Port:              "8080",
-				AppEnv:            "development",
+				AppEnv:            "production",
 				GraphQLPlayground: true,
 				LogLevel:          "info",
 				RepoDriver:        "memory",
@@ -44,7 +44,7 @@ func TestLoad(t *testing.T) {
 			env:  map[string]string{"GRAPHQL_PLAYGROUND": "notabool"},
 			want: Config{
 				Port:              "8080",
-				AppEnv:            "development",
+				AppEnv:            "production",
 				GraphQLPlayground: true,
 				LogLevel:          "info",
 				RepoDriver:        "memory",

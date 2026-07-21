@@ -22,7 +22,13 @@ import (
 	"github.com/nicolas2601/go-graphql-products-api/internal/usecase"
 )
 
-const shutdownTimeout = 10 * time.Second
+const (
+	readHeaderTimeout = 5 * time.Second
+	readTimeout       = 15 * time.Second
+	writeTimeout      = 15 * time.Second
+	idleTimeout       = 60 * time.Second
+	shutdownTimeout   = 10 * time.Second
+)
 
 func main() {
 	if err := run(); err != nil {
@@ -45,15 +51,24 @@ func run() error {
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
 		Handler:           server.NewHandler(cfg, products),
-		ReadHeaderTimeout: shutdownTimeout,
+		ReadHeaderTimeout: readHeaderTimeout,
+		ReadTimeout:       readTimeout,
+		WriteTimeout:      writeTimeout,
+		IdleTimeout:       idleTimeout,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	slog.Info("starting server", "port", cfg.Port, "env", cfg.AppEnv, "repo", cfg.RepoDriver)
+	return serve(ctx, srv)
+}
+
+// serve arranca el servidor y lo apaga de forma ordenada cuando el contexto se cancela.
+// Recibe el contexto ya armado, por lo que es testeable sin enviar senales al proceso.
+func serve(ctx context.Context, srv *http.Server) error {
 	serverErr := make(chan error, 1)
 	go func() {
-		slog.Info("server listening", "port", cfg.Port, "env", cfg.AppEnv, "repo", cfg.RepoDriver)
 		serverErr <- srv.ListenAndServe()
 	}()
 
@@ -62,12 +77,15 @@ func run() error {
 		if errors.Is(err, http.ErrServerClosed) {
 			return nil
 		}
-		return err
+		return fmt.Errorf("listen and serve: %w", err)
 	case <-ctx.Done():
 		slog.Info("shutdown signal received, draining connections")
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer cancel()
-		return srv.Shutdown(shutdownCtx)
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			return fmt.Errorf("graceful shutdown: %w", err)
+		}
+		return nil
 	}
 }
 

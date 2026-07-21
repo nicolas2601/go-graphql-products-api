@@ -18,12 +18,19 @@ type Config struct {
 func Load(getenv func(string) string) Config {
 	return Config{
 		Port:              orDefault(getenv("PORT"), "8080"),
-		AppEnv:            orDefault(getenv("APP_ENV"), "development"),
+		AppEnv:            orDefault(getenv("APP_ENV"), "production"),
 		GraphQLPlayground: parseBool(getenv("GRAPHQL_PLAYGROUND"), true),
 		LogLevel:          orDefault(getenv("LOG_LEVEL"), "info"),
 		RepoDriver:        orDefault(getenv("REPO_DRIVER"), "memory"),
 		DatabaseURL:       getenv("DATABASE_URL"),
 	}
+}
+
+// IsDevelopment indica si la app corre en modo desarrollo. Es un match exacto contra
+// "development" (fail-safe): cualquier otro valor, o el default "production", deshabilita
+// el playground y la introspection.
+func (c Config) IsDevelopment() bool {
+	return c.AppEnv == "development"
 }
 
 // orDefault devuelve value si no esta vacio, o fallback en caso contrario.
