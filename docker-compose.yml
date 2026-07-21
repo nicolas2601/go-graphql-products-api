@@ -1,0 +1,35 @@
+services:
+  api:
+    build:
+      context: .
+      target: production
+    ports:
+      - "${API_PORT:-8080}:8080"
+    environment:
+      APP_ENV: development
+      PORT: "8080"
+      REPO_DRIVER: postgres
+      DATABASE_URL: postgres://products:products@db:5432/products?sslmode=disable
+      LOG_LEVEL: info
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: products
+      POSTGRES_PASSWORD: products
+      POSTGRES_DB: products
+    # Sin puerto al host: la api accede por la red interna de compose (host "db").
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U products -d products"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata:
