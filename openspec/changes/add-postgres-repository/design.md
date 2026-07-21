@@ -10,10 +10,12 @@ Se usa `jackc/pgx/v5/pgxpool` por rendimiento y connection pooling. `postgres.Ne
 implementa `domain.ProductRepository`.
 
 ### Migraciones
-El esquema (tabla `products`: id UUID PK, name TEXT, price NUMERIC, stock INT, created_at
-TIMESTAMPTZ) se embebe con `go:embed` y se aplica con una funcion `Migrate(ctx, pool)`
-idempotente (`CREATE TABLE IF NOT EXISTS`). Simple y suficiente para una sola tabla; en la
-Prueba 2 se usaria goose/migrate.
+El esquema (tabla `products`: id UUID PK, name TEXT, price DOUBLE PRECISION, stock INTEGER,
+created_at TIMESTAMPTZ) se embebe con `go:embed` y se aplica con una funcion `Migrate(ctx, pool)`
+idempotente (`CREATE TABLE IF NOT EXISTS`). Se usa DOUBLE PRECISION para mapear limpio al
+`float64` del dominio (heredado del schema GraphQL); para dinero exacto lo correcto seria
+NUMERIC, queda como deuda documentada. Simple y suficiente para una sola tabla; en la Prueba 2
+se usaria goose/migrate versionado.
 
 ### Mapeo de errores
 Violacion de la primary key de id -> `ErrProductAlreadyExists`; `pgx.ErrNoRows` ->

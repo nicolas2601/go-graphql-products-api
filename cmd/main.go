@@ -30,6 +30,7 @@ const (
 	writeTimeout      = 15 * time.Second
 	idleTimeout       = 60 * time.Second
 	shutdownTimeout   = 10 * time.Second
+	connectTimeout    = 5 * time.Second
 )
 
 func main() {
@@ -44,10 +45,11 @@ func run() error {
 	cfg := config.Load(os.Getenv)
 	configureLogger(cfg.LogLevel)
 
-	repo, err := buildRepository(cfg)
+	repo, cleanup, err := buildRepository(cfg)
 	if err != nil {
 		return err
 	}
+	defer cleanup()
 	products := usecase.NewProductUseCase(repo, uuid.NewString, time.Now)
 
 	srv := &http.Server{
@@ -91,33 +93,37 @@ func serve(ctx context.Context, srv *http.Server) error {
 	}
 }
 
-// buildRepository selecciona la implementacion del repositorio segun REPO_DRIVER.
-func buildRepository(cfg config.Config) (domain.ProductRepository, error) {
+// buildRepository selecciona la implementacion del repositorio segun REPO_DRIVER y devuelve
+// una funcion de limpieza (no-op para memory, cierre del pool para postgres).
+func buildRepository(cfg config.Config) (domain.ProductRepository, func(), error) {
 	switch cfg.RepoDriver {
 	case "memory":
-		return memory.New(), nil
+		return memory.New(), func() {}, nil
 	case "postgres":
 		return buildPostgresRepository(cfg)
 	default:
-		return nil, fmt.Errorf("unknown repo driver %q", cfg.RepoDriver)
+		return nil, nil, fmt.Errorf("unknown repo driver %q", cfg.RepoDriver)
 	}
 }
 
-// buildPostgresRepository conecta a la base, aplica las migraciones y devuelve el repositorio.
-func buildPostgresRepository(cfg config.Config) (domain.ProductRepository, error) {
+// buildPostgresRepository conecta a la base, aplica las migraciones y devuelve el repositorio
+// junto con el cierre del pool. Usa un timeout acotado para fallar rapido si la base no responde.
+func buildPostgresRepository(cfg config.Config) (domain.ProductRepository, func(), error) {
 	if cfg.DatabaseURL == "" {
-		return nil, errors.New("DATABASE_URL is required when REPO_DRIVER=postgres")
+		return nil, nil, errors.New("DATABASE_URL is required when REPO_DRIVER=postgres")
 	}
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout)
+	defer cancel()
+
 	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
-		return nil, fmt.Errorf("connect to postgres: %w", err)
+		return nil, nil, fmt.Errorf("connect to postgres: %w", err)
 	}
 	if err := postgres.Migrate(ctx, pool); err != nil {
 		pool.Close()
-		return nil, fmt.Errorf("run migrations: %w", err)
+		return nil, nil, fmt.Errorf("run migrations: %w", err)
 	}
-	return postgres.New(pool), nil
+	return postgres.New(pool), pool.Close, nil
 }
 
 // configureLogger fija el logger estructurado por defecto segun el nivel indicado.
